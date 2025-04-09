@@ -16,10 +16,8 @@ export default function LoginScreen() {
     try {
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
       await AsyncStorage.setItem('isLoggedIn','true');
-
-
     } catch (error) {
-      
+      console.error('Failed to save data');
     }
   };
 
