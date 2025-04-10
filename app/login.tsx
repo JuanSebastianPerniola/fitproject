@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 
 // Definimos una interfaz para nuestro objeto de usuario
@@ -12,66 +14,70 @@ export default function LoginScreen() {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const navigation = useNavigation();
   // Especificamos el tipo del estado users como User[]
   const [users, setUsers] = useState<User[]>([]);
-  
+
+  // boton para ir para atras
+  const handleGoBack = () => { navigation.goBack(); };
+
   // Cargar usuarios desde el archivo de texto
   useEffect(() => {
     loadUsers();
   }, []);
-  
+
   const loadUsers = async () => {
     try {
       // Ruta al archivo de usuarios (ajustar según tu estructura de proyecto)
       const fileUri = FileSystem.documentDirectory + 'users.txt';
-      
+
       // Verificar si el archivo existe, si no, crear uno con usuario de ejemplo
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      
+
       if (!fileInfo.exists) {
         await FileSystem.writeAsStringAsync(
-          fileUri, 
+          fileUri,
           'userName: jose, password: ejemploPassword\n'
         );
       }
-      
+
       // Leer el archivo
       const content = await FileSystem.readAsStringAsync(fileUri);
       const lines = content.split('\n').filter(line => line.trim() !== '');
-      
+
       // Convertir cada línea en un objeto de usuario
       const parsedUsers: User[] = lines.map(line => {
         const userMatch = line.match(/userName\s*:\s*([^,]+)/);
         const passMatch = line.match(/password\s*:\s*([^,]+)/);
-        
+
         return {
           username: userMatch ? userMatch[1].trim() : '',
           password: passMatch ? passMatch[1].trim() : ''
         };
       });
-      
+
       setUsers(parsedUsers);
     } catch (error) {
       console.error("Error cargando usuarios:", error);
       setErrorMessage("Error al cargar los datos de usuario");
     }
   };
-  
+
   const handleLogin = () => {
     // Limpiar mensaje de error anterior
     setErrorMessage('');
-    
+
     // Validar que se ingresaron username y password
     if (!username || !password) {
       setErrorMessage('Por favor ingrese usuario y contraseña');
       return;
     }
-    
+
     // Buscar el usuario en la lista
     const user = users.find(
       user => user.username === username && user.password === password
     );
-    
+
     if (user) {
       // Login exitoso
       Alert.alert("Éxito", "Has iniciado sesión correctamente");
@@ -82,14 +88,24 @@ export default function LoginScreen() {
       setErrorMessage('Usuario o contraseña incorrectos');
     }
   };
-  
+
   return (
+
     <View style={styles.container}>
+
+      {/*boton para ir para atras*/}
+
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleGoBack}
+      >
+        <Ionicons name="arrow-back" size={24} color="white" />
+      </TouchableOpacity>
       <Text style={styles.title}>Iniciar Sesión</Text>
-      
+
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Usuario:</Text>
-        <TextInput 
+        <TextInput
           style={styles.input}
           placeholder="Ingrese su nombre de usuario"
           value={username}
@@ -97,10 +113,10 @@ export default function LoginScreen() {
           autoCapitalize="none"
         />
       </View>
-      
+
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Contraseña:</Text>
-        <TextInput 
+        <TextInput
           style={styles.input}
           placeholder="Ingrese su contraseña"
           value={password}
@@ -108,11 +124,11 @@ export default function LoginScreen() {
           secureTextEntry
         />
       </View>
-      
+
       {errorMessage ? (
         <Text style={styles.errorText}>{errorMessage}</Text>
       ) : null}
-      
+
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
       </TouchableOpacity>
@@ -166,5 +182,32 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginTop: 10,
-  }
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#6c757d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // Para la opción 2 (header navigation)
+  headerButton: {
+    marginRight: 15,
+    padding: 5,
+  },
+  headerButtonText: {
+    color: '#007AFF', // Color azul típico de iOS
+    fontSize: 16,
+  },
 });
