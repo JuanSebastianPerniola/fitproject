@@ -33,6 +33,7 @@ export default function SignUpScreen() {
     if (!formData.email.trim()) newErrors.email = 'Email requerido';
     else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Email inválido';
     if (!formData.password) newErrors.password = 'Contraseña requerida';
+    // test para hacer < 1
     else if (formData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
     if (formData.password !== confirmPassword) newErrors.confirmPassword = 'Las contraseñas no coinciden';
     if (!formData.age) newErrors.age = 'Edad requerida';

@@ -1,106 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as React from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
 
-// Definimos una interfaz para nuestro objeto de usuario
-interface User {
-  username: string;
-  password: string;
-}
-
-export default function LoginScreen() {
-  const [username, setUsername] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+const LoginScreen = () => {
   const navigation = useNavigation();
-  // Especificamos el tipo del estado users como User[]
-  const [users, setUsers] = useState<User[]>([]);
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [errorMessage, setErrorMessage] = React.useState('');
+  
+  const fs = require('fs');
+  const path = require('path');
 
-  // boton para ir para atras
-  const handleGoBack = () => { navigation.goBack(); };
-
-  // Cargar usuarios desde el archivo de texto
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      // Ruta al archivo de usuarios (ajustar según tu estructura de proyecto)
-      const fileUri = FileSystem.documentDirectory + 'users.txt';
-
-      // Verificar si el archivo existe, si no, crear uno con usuario de ejemplo
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-
-      if (!fileInfo.exists) {
-        await FileSystem.writeAsStringAsync(
-          fileUri,
-          'userName: jose, password: ejemploPassword\n'
-        );
-      }
-
-      // Leer el archivo
-      const content = await FileSystem.readAsStringAsync(fileUri);
-      const lines = content.split('\n').filter(line => line.trim() !== '');
-
-      // Convertir cada línea en un objeto de usuario
-      const parsedUsers: User[] = lines.map(line => {
-        const userMatch = line.match(/userName\s*:\s*([^,]+)/);
-        const passMatch = line.match(/password\s*:\s*([^,]+)/);
-
-        return {
-          username: userMatch ? userMatch[1].trim() : '',
-          password: passMatch ? passMatch[1].trim() : ''
-        };
-      });
-
-      setUsers(parsedUsers);
-    } catch (error) {
-      console.error("Error cargando usuarios:", error);
-      setErrorMessage("Error al cargar los datos de usuario");
-    }
+  const handleGoBack = () => {
+    navigation.goBack();
   };
 
   const handleLogin = () => {
-    // Limpiar mensaje de error anterior
-    setErrorMessage('');
-
-    // Validar que se ingresaron username y password
     if (!username || !password) {
-      setErrorMessage('Por favor ingrese usuario y contraseña');
+      setErrorMessage('Usuario y contraseña son requeridos');
       return;
     }
-
-    // Buscar el usuario en la lista
-    const user = users.find(
-      user => user.username === username && user.password === password
-    );
-
-    if (user) {
-      // Login exitoso
-      Alert.alert("Éxito", "Has iniciado sesión correctamente");
-      // Aquí podrías navegar a la siguiente pantalla
-      // navigation.navigate('Home');
-    } else {
-      // Usuario no encontrado o contraseña incorrecta
-      setErrorMessage('Usuario o contraseña incorrectos');
+    
+    try {
+      const userData = { username, loginDate: new Date() };
+      const userDir = path.join('C:', 'Users', 'JuanPrograma', 'OneDrive', 'Desktop', 
+                               'fitproject', 'fitproject', 'fitproject', 'user');
+      
+      // Ensure directory exists
+      if (!fs.existsSync(userDir)) {
+        fs.mkdirSync(userDir, { recursive: true });
+      }
+      
+      // Create a JSON file for the user
+      const userFilePath = path.join(userDir, `${username}.json`);
+      fs.writeFileSync(userFilePath, JSON.stringify(userData, null, 2));
+      
+      console.log(`Usuario guardado en: ${userFilePath}`);
+      
+    } catch (error) {
+      console.error('Error al guardar datos:', error);
+      setErrorMessage('Error al guardar datos de usuario');
     }
   };
-
   return (
-
     <View style={styles.container}>
-
-      {/*boton para ir para atras*/}
-
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={handleGoBack}
-      >
+      {/* Botón para ir atrás */}
+      <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Ionicons name="arrow-back" size={24} color="white" />
       </TouchableOpacity>
+
       <Text style={styles.title}>Iniciar Sesión</Text>
 
       <View style={styles.inputContainer}>
@@ -125,89 +74,61 @@ export default function LoginScreen() {
         />
       </View>
 
-      {errorMessage ? (
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      ) : null}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
       </TouchableOpacity>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#121212',
     padding: 20,
   },
+  backButton: {
+    marginTop: 40,
+    marginBottom: 20,
+  },
   title: {
+    color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 30,
+    textAlign: 'center',
   },
   inputContainer: {
-    width: '100%',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   label: {
-    marginBottom: 5,
-    fontSize: 16,
+    color: 'white',
+    marginBottom: 8,
   },
   input: {
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    fontSize: 16,
+    backgroundColor: '#1E1E1E',
+    color: 'white',
+    borderRadius: 8,
+    padding: 12,
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#007BFF',
-    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
-    borderRadius: 5,
     marginTop: 20,
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
     fontWeight: 'bold',
   },
   errorText: {
     color: 'red',
+    textAlign: 'center',
     marginTop: 10,
   },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#6c757d',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  // Para la opción 2 (header navigation)
-  headerButton: {
-    marginRight: 15,
-    padding: 5,
-  },
-  headerButtonText: {
-    color: '#007AFF', // Color azul típico de iOS
-    fontSize: 16,
-  },
 });
+
+export default LoginScreen;
