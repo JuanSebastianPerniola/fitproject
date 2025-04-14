@@ -1,48 +1,111 @@
-import * as React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import * as React from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from '@expo/vector-icons';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+// import MainMenuUserScreen from "./mainMenuUser";
+// import NutricionistaScreen from "./screens/NutricionistaScreen";
+// import EntrenadorScreen from "./screens/EntrenadorScreen";
+
+export type RootStackParamList = {
+  Login: undefined;
+  MainMenuUser: { userData: any };
+  Nutricionista: { userData: any };
+  Entrenador: { userData: any };
+  "/nutricionista": { userData: any }; // Añade esto
+  "/": undefined;
+  "/login": undefined;
+  "/mainMenuUser": { userData: any };
+  "/signUp": undefined;
+  "/clasesDirigidas": undefined;
+  "/_sitemap": undefined;
+  "/+not-found": undefined;
+};
 
 const LoginScreen = () => {
-  const navigation = useNavigation();
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [errorMessage, setErrorMessage] = React.useState('');
-  
-  const fs = require('fs');
-  const path = require('path');
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const router = useRouter();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username || !password) {
-      setErrorMessage('Usuario y contraseña son requeridos');
+      setErrorMessage("Usuario y contraseña son requeridos");
       return;
     }
-    
+
+    setIsLoading(true);
+    setErrorMessage("");
+
     try {
-      const userData = { username, loginDate: new Date() };
-      const userDir = path.join('C:', 'Users', 'JuanPrograma', 'OneDrive', 'Desktop', 
-                               'fitproject', 'fitproject', 'fitproject', 'user');
-      
-      // Ensure directory exists
-      if (!fs.existsSync(userDir)) {
-        fs.mkdirSync(userDir, { recursive: true });
+      const response = await fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Expected JSON, got:", text);
+        throw new Error("Server did not return JSON");
       }
-      
-      // Create a JSON file for the user
-      const userFilePath = path.join(userDir, `${username}.json`);
-      fs.writeFileSync(userFilePath, JSON.stringify(userData, null, 2));
-      
-      console.log(`Usuario guardado en: ${userFilePath}`);
-      
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.message || "Error en la autenticación");
+        return;
+      }
+
+      await AsyncStorage.setItem("userData", JSON.stringify(data));
+      await AsyncStorage.setItem("token", data.token || "");
+
+      if (data.entrenador) {
+        router.push({
+          pathname: "/entrenador",
+          params: { userData: JSON.stringify(data) },
+        });
+      } else if (data.nutricionista) {
+        router.push({
+          pathname: "/nutricionista",
+          params: { userData: JSON.stringify(data) },
+        });
+      } else {
+        router.push({
+          pathname: "/mainMenuUser",
+          params: { userData: JSON.stringify(data) },
+        });
+      }
     } catch (error) {
-      console.error('Error al guardar datos:', error);
-      setErrorMessage('Error al guardar datos de usuario');
+      console.error("Error during login:", error);
+      setErrorMessage("Error de conexión. Inténtelo de nuevo.");
+    } finally {
+      setIsLoading(false);
     }
   };
+
   return (
     <View style={styles.container}>
       {/* Botón para ir atrás */}
@@ -74,10 +137,18 @@ const LoginScreen = () => {
         />
       </View>
 
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+      {errorMessage ? (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      ) : null}
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Ingresar</Text>
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText}>
+          {isLoading ? "Procesando..." : "Ingresar"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -86,7 +157,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: "#121212",
     padding: 20,
   },
   backButton: {
@@ -94,39 +165,43 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 30,
-    textAlign: 'center',
+    textAlign: "center",
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    color: 'white',
+    color: "white",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1E1E1E',
-    color: 'white',
+    backgroundColor: "#1E1E1E",
+    color: "white",
     borderRadius: 8,
     padding: 12,
   },
   button: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
+  buttonDisabled: {
+    backgroundColor: "#2E7D32",
+    opacity: 0.7,
+  },
   buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   errorText: {
-    color: 'red',
-    textAlign: 'center',
+    color: "red",
+    textAlign: "center",
     marginTop: 10,
   },
 });
