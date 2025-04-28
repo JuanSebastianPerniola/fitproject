@@ -21,7 +21,7 @@ export type RootStackParamList = {
   MainMenuUser: { userData: any };
   Nutricionista: { userData: any };
   Entrenador: { userData: any };
-  "/nutricionista": { userData: any }; // Añade esto
+  // "/nutricionista": { userData: any }; // Añade esto
   "/": undefined;
   "/login": undefined;
   "/mainMenuUser": { userData: any };
@@ -30,6 +30,7 @@ export type RootStackParamList = {
   "/_sitemap": undefined;
   "/+not-found": undefined;
 };
+const API_URL = "http://192.168.1.143:8080/api/users/login";
 
 const LoginScreen = () => {
   const [username, setUsername] = React.useState("");
@@ -55,7 +56,7 @@ const LoginScreen = () => {
     setErrorMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/login", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,22 +83,22 @@ const LoginScreen = () => {
       await AsyncStorage.setItem("userData", JSON.stringify(data));
       await AsyncStorage.setItem("token", data.token || "");
 
-      if (data.entrenador) {
-        router.push({
-          pathname: "/entrenador",
-          params: { userData: JSON.stringify(data) },
-        });
-      } else if (data.nutricionista) {
-        router.push({
-          pathname: "/nutricionista",
-          params: { userData: JSON.stringify(data) },
-        });
-      } else {
-        router.push({
-          pathname: "/mainMenuUser",
-          params: { userData: JSON.stringify(data) },
-        });
-      }
+      // if (data.entrenador) {
+      //   router.push({
+      //     pathname: "/entrenador",
+      //     params: { userData: JSON.stringify(data) },
+      //   });
+      // } else if (data.nutricionista) {
+      //   router.push({
+      //     pathname: "/nutricionista",
+      //     params: { userData: JSON.stringify(data) },
+      //   });
+      // } else {
+      router.push({
+        pathname: "/mainMenuUser",
+        params: { userData: JSON.stringify(data) },
+      });
+      // }
     } catch (error) {
       console.error("Error during login:", error);
       setErrorMessage("Error de conexión. Inténtelo de nuevo.");

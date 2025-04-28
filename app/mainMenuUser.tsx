@@ -11,22 +11,12 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createWorkletRuntime } from "react-native-reanimated";
-
-interface UserData {
-  nombre: string;
-  apellidos: string;
-  peso: number;
-  altura: number;
-  masaMuscular: number;
-  foto?: string;
-}
+import { router, useRouter } from "expo-router";
 
 // Define your navigation stack types
 type RootStackParamList = {
   MainMenuUser: {
-    userData: { user: UserData;  };
+    userData: { user: UserData };
   };
   Login: undefined;
   Nutricion: undefined;
@@ -44,6 +34,15 @@ type MainMenuUserNavigationProp = NativeStackNavigationProp<
 
 type MainMenuUserRouteProp = RouteProp<RootStackParamList, "MainMenuUser">;
 
+interface UserData {
+  nombre: string;
+  apellidos: string;
+  peso: number;
+  altura: number;
+  masaMuscular: number;
+  foto?: string;
+}
+
 const MainMenuUser = () => {
   const navigation = useNavigation<MainMenuUserNavigationProp>();
   const route = useRoute<MainMenuUserRouteProp>();
@@ -51,7 +50,7 @@ const MainMenuUser = () => {
 
   React.useEffect(() => {
     console.log("Route params:", route.params);
-    
+
     if (route.params?.userData?.user) {
       console.log("User data from params:", route.params.userData.user);
       setUserData(route.params.userData.user);
@@ -59,20 +58,18 @@ const MainMenuUser = () => {
       console.log("User data not available in params, loading from storage");
       loadUserData();
     }
-  }, []);
-
+  }, [route.params]);
 
   const loadUserData = async () => {
     try {
       console.log("Attempting to load user data from AsyncStorage");
       const storedUserData = await AsyncStorage.getItem("userData");
       console.log("Retrieved data:", storedUserData);
-      
+
       if (storedUserData) {
         const parsedData = JSON.parse(storedUserData);
         console.log("Parsed user data:", parsedData);
-        
-        // Here's the fix: extract the user object from the stored data
+
         if (parsedData.user) {
           setUserData(parsedData.user);
         } else {
@@ -88,30 +85,23 @@ const MainMenuUser = () => {
       navigation.navigate("Login");
     }
   };
+
   const handleLogout = async () => {
     try {
       // Clear user data from storage
       await AsyncStorage.removeItem("userData");
       await AsyncStorage.removeItem("token");
-      // Navigate back to login
+
+      // Navigate back to login screen
       navigation.navigate("Login");
     } catch (error) {
       console.error("Error during logout:", error);
     }
   };
-  // CARGANDO
-  if (!userData) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Cargando...</Text>
-      </View>
-    );
-  }
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mi Perfil</Text>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="white" />
         </TouchableOpacity>
@@ -119,7 +109,7 @@ const MainMenuUser = () => {
 
       <View style={styles.profileContainer}>
         <View style={styles.profileImageContainer}>
-          {userData.foto ? (
+          {userData?.foto ? (
             <Image
               source={{ uri: userData?.foto }}
               style={styles.profileImage}
@@ -134,191 +124,111 @@ const MainMenuUser = () => {
         <Text style={styles.welcomeText}>
           Bienvenido, {userData?.nombre} {userData?.apellidos}
         </Text>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userData.peso} kg</Text>
-            <Text style={styles.statLabel}>Peso</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userData.altura} m</Text>
-            <Text style={styles.statLabel}>Altura</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{userData.masaMuscular}%</Text>
-            <Text style={styles.statLabel}>Masa Muscular</Text>
-          </View>
-        </View>
       </View>
 
       <View style={styles.menuGrid}>
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => navigation.navigate("Nutricion")}
+          onPress={() => router.push("/notificaciones")}
         >
-          <Ionicons name="nutrition-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Plan Nutricional</Text>
+          <Ionicons name="notifications-outline" size={32} color="white" />
+          <Text style={styles.menuText}>Notificaciones</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => navigation.navigate("Calendario")}
+          onPress={() => router.push("/clasesDirigidas")}
         >
           <Ionicons name="calendar-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Calendario</Text>
+          <Text style={styles.menuText}>Cita</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Progreso")}
-        >
-          <Ionicons name="analytics-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Mi Progreso</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Mensajes")}
-        >
-          <Ionicons name="chatbubbles-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Mensajes</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("Ajustes")}
-        >
-          <Ionicons name="settings-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Ajustes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate("ClasesDirigidas")}
-        >
-          <Ionicons name="fitness" size={32} color="white" />
-          <Text style={styles.menuText}>Clases Dirigidas</Text>
-        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => router.push("/elegirEntrenador")}
+      >
+        <Ionicons name="person-add-outline" size={32} color="white" />
+        <Text style={styles.menuText}>Elegir Entrenador</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => router.push("/elegirNutricionista")}
+      >
+        <Ionicons name="nutrition-outline" size={32} color="white" />
+        <Text style={styles.menuText}>Elegir Nutricionista</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
 
+export default MainMenuUser;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
-  },
-  loadingContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    color: "white",
-    fontSize: 16,
+    backgroundColor: '#f4f4f4',
+    padding: 20,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-  },
-  title: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 20,
   },
   logoutButton: {
-    padding: 8,
+    backgroundColor: '#ff6347',
+    padding: 10,
+    borderRadius: 50,
   },
   profileContainer: {
-    alignItems: "center",
-    paddingVertical: 20,
+    alignItems: 'center',
+    marginBottom: 30,
   },
   profileImageContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    overflow: "hidden",
-    marginBottom: 15,
-    backgroundColor: "#2A2A2A",
+    overflow: 'hidden',
+    marginBottom: 10,
   },
   profileImage: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
   profileImagePlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+    width: '100%',
+    height: '100%',
   },
   welcomeText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingHorizontal: 20,
-    marginVertical: 10,
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statValue: {
-    color: "#4CAF50",
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  statLabel: {
-    color: "#aaa",
-    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   menuGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    padding: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 30,
   },
   menuItem: {
-    width: "48%",
-    backgroundColor: "#2A2A2A",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e90ff',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
     marginBottom: 15,
-    position: "relative",
+    width: '48%',
+    justifyContent: 'space-between',
   },
   menuText: {
-    color: "white",
-    marginTop: 8,
-    fontWeight: "500",
-  },
-  badge: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "#FF4500",
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  badgeText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
   },
 });
-
-export default MainMenuUser;
