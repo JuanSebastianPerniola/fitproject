@@ -30,7 +30,7 @@ export type RootStackParamList = {
   "/_sitemap": undefined;
   "/+not-found": undefined;
 };
-const API_URL = "http://192.168.1.143:8080/api/users/login";
+const API_URL = "http://localhost:8080/api/users/login";
 
 const LoginScreen = () => {
   const [username, setUsername] = React.useState("");
@@ -83,22 +83,22 @@ const LoginScreen = () => {
       await AsyncStorage.setItem("userData", JSON.stringify(data));
       await AsyncStorage.setItem("token", data.token || "");
 
-      // if (data.entrenador) {
-      //   router.push({
-      //     pathname: "/entrenador",
-      //     params: { userData: JSON.stringify(data) },
-      //   });
-      // } else if (data.nutricionista) {
-      //   router.push({
-      //     pathname: "/nutricionista",
-      //     params: { userData: JSON.stringify(data) },
-      //   });
-      // } else {
-      router.push({
-        pathname: "/mainMenuUser",
-        params: { userData: JSON.stringify(data) },
-      });
-      // }
+      if (data.entrenador) {
+        router.push({
+          pathname: "/entrenador",
+          params: { userData: JSON.stringify(data) },
+        });
+      } else if (data.nutricionista) {
+        router.push({
+          pathname: "/nutricionista",
+          params: { userData: JSON.stringify(data) },
+        });
+      } else {
+        router.push({
+          pathname: "/mainMenuUser",
+          params: { userData: JSON.stringify(data) },
+        });
+      }
     } catch (error) {
       console.error("Error during login:", error);
       setErrorMessage("Error de conexión. Inténtelo de nuevo.");

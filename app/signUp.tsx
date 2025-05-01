@@ -83,7 +83,7 @@
     // listado de entrendaores y nutris
 
     // API URL for your Spring backend
-    const API_URL = "http://192.168.1.143:8080/api/users";
+    const API_URL = "http://localhost:8080/api/users";
 
     // Validate form
     const validateForm = () => {

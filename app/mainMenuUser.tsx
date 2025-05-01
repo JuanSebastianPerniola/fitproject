@@ -74,15 +74,15 @@ const MainMenuUser = () => {
           setUserData(parsedData.user);
         } else {
           console.log("User property not found in stored data");
-          navigation.navigate("Login");
+          navigation.navigate("login");
         }
       } else {
         console.log("No user data found, redirecting to login");
-        navigation.navigate("Login");
+        navigation.navigate("login");
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-      navigation.navigate("Login");
+      navigation.navigate("login");
     }
   };
 
@@ -93,7 +93,7 @@ const MainMenuUser = () => {
       await AsyncStorage.removeItem("token");
 
       // Navigate back to login screen
-      navigation.navigate("Login");
+      navigation.navigate("login");
     } catch (error) {
       console.error("Error during logout:", error);
     }

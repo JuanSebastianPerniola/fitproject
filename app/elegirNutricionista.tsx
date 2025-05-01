@@ -5,7 +5,7 @@ import { router } from "expo-router";
 export default function SeleccionarNutricionistaScreen({ navigation }) {
   const [nutricionistas, setNutricionistas] = useState([]);
   const [selectedNutricionista, setSelectedNutricionista] = useState(null);
-  const API_URL = "http://192.168.1.143:8080/api/users/nutricionista";
+  const API_URL = "http://localhost:8080/api/users/nutricionista";
 
   useEffect(() => {
     fetchNutricionistas();

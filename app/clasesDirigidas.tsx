@@ -12,7 +12,7 @@ export default function ClasesDirigidasCalendar() {
   const [reservingClass, setReservingClass] = useState(false);
   const [error, setError] = useState(null);
   const [userReservas, setUserReservas] = useState([]);
-  const API_URL = "http://192.168.1.143:8080/api/clasesDirigidas";
+  const API_URL = "http://localhost:8080/api/clasesDirigidas";
 
   const formatTime = (timeString) => {
     if (!timeString || typeof timeString !== "string")
@@ -87,7 +87,7 @@ export default function ClasesDirigidasCalendar() {
         const usuarioId = usuarioObj.user.id;
         
         // Fetch user's existing reservations
-        const response = await fetch(`http://192.168.1.143:8080/api/reservas?usuarioId=${usuarioId}`);
+        const response = await fetch(`http://localhost:8080/api/reservas?usuarioId=${usuarioId}`);
         
         if (response.ok) {
           const reservas = await response.json();
@@ -168,7 +168,7 @@ export default function ClasesDirigidasCalendar() {
         
         // Send request with query parameters, as expected by the backend
         const response = await fetch(
-          `http://192.168.1.143:8080/api/reservas?usuarioId=${usuarioId}&claseDirigidaId=${claseId}`,
+          `http://localhost:8080/api/reservas?usuarioId=${usuarioId}&claseDirigidaId=${claseId}`,
           {
             method: "POST",
             headers: {

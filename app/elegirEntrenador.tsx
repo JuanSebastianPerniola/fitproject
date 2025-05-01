@@ -12,7 +12,7 @@ import {
 export default function SeleccionarEntrenadorScreen({ navigation }) {
   const [entrenadores, setEntrenadores] = useState([]);
   const [selectedEntrenador, setSelectedEntrenador] = useState(null);
-  const API_URL = "http://192.168.1.143:8080/api/users/entrenadores";
+  const API_URL = "http://localhost:8080/api/users/entrenadores";
 
   useEffect(() => {
     fetchEntrenadores();
