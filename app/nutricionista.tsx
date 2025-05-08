@@ -13,6 +13,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Nutricionista({ navigation }) {
   const [activeTab, setActiveTab] = useState("home");
@@ -28,19 +29,20 @@ export default function Nutricionista({ navigation }) {
   const [userType, setUserType] = useState("client"); // 'client', 'nutricionista', or 'entrenador'
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  
+
   // Modal para enviar notificaciones
-  const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
+  const [isNotificationModalVisible, setIsNotificationModalVisible] =
+    useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationReceiver, setNotificationReceiver] = useState(null);
-  
+
   // ID de usuario actual (nutricionista) - En una app real vendría de autenticación
   const currentUserId = 1; // Ejemplo: ID del nutricionista logueado
 
   // Report form state
   const [reportForm, setReportForm] = useState({
     weight: "",
-    dietNotes: "",
+    exerciseNotes: "",
     heartRate: "",
   });
 
@@ -48,7 +50,9 @@ export default function Nutricionista({ navigation }) {
   const fetchNotifications = async () => {
     setLoadingNotifications(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/notificaciones/${currentUserId}`);
+      const response = await fetch(
+        `http://localhost:8080/api/notificaciones/${currentUserId}`
+      );
       if (!response.ok) {
         throw new Error("Error al cargar las notificaciones");
       }
@@ -69,20 +73,18 @@ export default function Nutricionista({ navigation }) {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/notificaciones/enviar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mensaje: notificationMessage,
-        }),
-        // Añadimos los parámetros como query params
-        params: new URLSearchParams({
-          emisorId: currentUserId,
-          receptorId: notificationReceiver.id,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:8080/api/notificaciones/enviar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mensaje: notificationMessage,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Error al enviar la notificación");
@@ -91,7 +93,7 @@ export default function Nutricionista({ navigation }) {
       // Limpiar el formulario y cerrar el modal
       setNotificationMessage("");
       setIsNotificationModalVisible(false);
-      
+
       Alert.alert("Éxito", "Notificación enviada correctamente");
     } catch (err) {
       console.error("Error sending notification:", err);
@@ -102,9 +104,12 @@ export default function Nutricionista({ navigation }) {
   // Mark notification as read
   const markAsRead = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/notificaciones/leida/${id}`, {
-        method: "PUT",
-      });
+      const response = await fetch(
+        `http://localhost:8080/api/notificaciones/leida/${id}`,
+        {
+          method: "PUT",
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Error al marcar la notificación como leída");
@@ -114,7 +119,7 @@ export default function Nutricionista({ navigation }) {
       const updatedNotifications = notifications.map((notification) =>
         notification.id === id ? { ...notification, leida: true } : notification
       );
-      
+
       setNotifications(updatedNotifications);
     } catch (err) {
       console.error("Error marking notification as read:", err);
@@ -159,12 +164,12 @@ export default function Nutricionista({ navigation }) {
     // Check if the current user is a nutricionista
     // This would normally come from your authentication system
     setUserType("nutricionista");
-    
+
     // Podríamos establecer un intervalo para actualizar las notificaciones periódicamente
     const notificationInterval = setInterval(() => {
       fetchNotifications();
     }, 60000); // Cada minuto
-    
+
     return () => clearInterval(notificationInterval);
   }, []);
 
@@ -174,11 +179,18 @@ export default function Nutricionista({ navigation }) {
       setFilteredClients(clients);
     } else {
       const lowercasedQuery = searchQuery.toLowerCase();
-      const filtered = clients.filter(
-        (client) =>
-          client.nombre.toLowerCase().includes(lowercasedQuery) ||
-          client.apellidos.toLowerCase().includes(lowercasedQuery)
-      );
+      const filtered = clients.filter((client) => {
+        const clientName = client.nombre ? client.nombre.toLowerCase() : "";
+        const clientSurname = client.apellidos
+          ? client.apellidos.toLowerCase()
+          : "";
+
+        return (
+          clientName.includes(lowercasedQuery) ||
+          clientSurname.includes(lowercasedQuery)
+        );
+      });
+
       setFilteredClients(filtered);
     }
   }, [searchQuery, clients]);
@@ -221,27 +233,68 @@ export default function Nutricionista({ navigation }) {
     // Reset report form and clear reservations
     setReportForm({
       weight: "",
-      dietNotes: "",
+      exerciseNotes: "",
       heartRate: "",
     });
     setClientReservations([]);
   };
 
-  // Handle sending report
-  const sendReport = () => {
-    // In a real app, this would send data to an API WIP
-    Alert.alert(
-      "Informe Enviado",
-      `Se ha enviado el informe a ${selectedClient.nombre} ${selectedClient.apellidos}`,
-      [{ text: "OK" }]
-    );
+  const sendReport = async () => {
+    try {
+      // Get the current professional data
+      const professionalData = await AsyncStorage.getItem("userData");
+      const currentUser = professionalData
+        ? JSON.parse(professionalData)
+        : null;
+      console.log(currentUser);
 
-    // Reset form
-    setReportForm({
-      weight: "",
-      dietNotes: "",
-      heartRate: "",
-    });
+      if (!selectedClient || !currentUser?.user) {
+        console.log("Missing data:", { selectedClient, currentUser });
+        Alert.alert("Error", "Faltan datos del cliente o del entrenador.");
+        return;
+      }
+
+      // Changed payload structure to match what your backend expects
+      const informePayload = {
+        usuarioId: selectedClient.id, // Changed from usuario to usuarioId
+        enviadoPorId: currentUser.user?.id, // Changed from enviadoPor to enviadoPorId
+        mensaje: reportForm.exerciseNotes,
+        fecha: new Date().toISOString().split("T")[0],
+        peso: parseFloat(reportForm.weight),
+        masaMuscular: 0,
+      };
+
+      console.log("Payload enviado:", informePayload);
+
+      const response = await fetch("http://localhost:8080/api/informes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(informePayload),
+      });
+      console.log("Payload enviado:", informePayload);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error al enviar el informe:", errorData);
+        throw new Error(
+          `Error al enviar el informe: ${response.status} - ${JSON.stringify(
+            errorData
+          )}`
+        );
+      }
+
+      window.alert("Informe enviado correctamente.");
+
+      setReportForm({
+        weight: "",
+        exerciseNotes: "",
+        heartRate: "",
+      });
+    } catch (error) {
+      window.alert("Algo a ido mal revise informacion enviada.");
+    }
   };
 
   // Handle report form changes
@@ -298,7 +351,10 @@ export default function Nutricionista({ navigation }) {
   // Render notification item
   const renderNotificationItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.notificationItem, !item.leida && styles.unreadNotification]}
+      style={[
+        styles.notificationItem,
+        !item.leida && styles.unreadNotification,
+      ]}
       onPress={() => markAsRead(item.id)}
     >
       <View style={styles.notificationContent}>
@@ -306,7 +362,9 @@ export default function Nutricionista({ navigation }) {
           De: {item.emisor?.nombre || "Sistema"}
         </Text>
         <Text style={styles.notificationMessage}>{item.mensaje}</Text>
-        <Text style={styles.notificationTime}>{new Date(item.fechaCreacion).toLocaleString()}</Text>
+        <Text style={styles.notificationTime}>
+          {new Date(item.fechaCreacion).toLocaleString()}
+        </Text>
       </View>
       {!item.leida && <View style={styles.unreadDot} />}
     </TouchableOpacity>
@@ -340,9 +398,9 @@ export default function Nutricionista({ navigation }) {
         <Text style={styles.clientDetailName}>
           {selectedClient.nombre} {selectedClient.apellidos}
         </Text>
-        
+
         {/* Botón para enviar notificación directamente desde la vista de detalle */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.detailNotifyButton}
           onPress={() => openSendNotificationModal(selectedClient)}
         >
@@ -503,8 +561,8 @@ export default function Nutricionista({ navigation }) {
           <Text style={styles.formLabel}>Notas sobre dieta:</Text>
           <TextInput
             style={[styles.formInput, styles.textArea]}
-            value={reportForm.dietNotes}
-            onChangeText={(text) => handleReportChange("dietNotes", text)}
+            value={reportForm.exerciseNotes}
+            onChangeText={(text) => handleReportChange("exerciseNotes", text)}
             placeholder="Añade notas sobre la dieta recomendada..."
             multiline={true}
             numberOfLines={4}
@@ -567,14 +625,14 @@ export default function Nutricionista({ navigation }) {
                 key={notification.id}
                 style={[
                   styles.recentNotificationItem,
-                  !notification.leida && styles.unreadNotificationItem
+                  !notification.leida && styles.unreadNotificationItem,
                 ]}
                 onPress={() => markAsRead(notification.id)}
               >
                 <Text style={styles.recentNotificationSender}>
                   De: {notification.emisor?.nombre || "Sistema"}
                 </Text>
-                <Text 
+                <Text
                   style={styles.recentNotificationMessage}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -587,7 +645,9 @@ export default function Nutricionista({ navigation }) {
               </TouchableOpacity>
             ))}
             <TouchableOpacity onPress={() => setActiveTab("notifications")}>
-              <Text style={styles.viewAllLink}>Ver todas las notificaciones</Text>
+              <Text style={styles.viewAllLink}>
+                Ver todas las notificaciones
+              </Text>
             </TouchableOpacity>
           </>
         )}
@@ -677,9 +737,10 @@ export default function Nutricionista({ navigation }) {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>
-            Enviar notificación a {notificationReceiver?.nombre} {notificationReceiver?.apellidos}
+            Enviar notificación a {notificationReceiver?.nombre}{" "}
+            {notificationReceiver?.apellidos}
           </Text>
-          
+
           <TextInput
             style={[styles.formInput, styles.textArea, styles.modalInput]}
             value={notificationMessage}
@@ -688,16 +749,16 @@ export default function Nutricionista({ navigation }) {
             multiline={true}
             numberOfLines={4}
           />
-          
+
           <View style={styles.modalButtonsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalCancelButton}
               onPress={() => setIsNotificationModalVisible(false)}
             >
               <Text style={styles.modalCancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.modalSendButton}
               onPress={sendNotification}
             >
@@ -784,7 +845,7 @@ export default function Nutricionista({ navigation }) {
           </View>
         </>
       )}
-      
+
       {/* Modal para enviar notificaciones */}
       {renderNotificationModal()}
     </SafeAreaView>

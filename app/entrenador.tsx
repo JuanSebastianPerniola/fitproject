@@ -90,7 +90,7 @@ export default function Entrenador({ navigation }) {
       setIsLoading(false);
     }
   };
-  
+
   // Initial load
   useEffect(() => {
     fetchClients();
@@ -102,25 +102,25 @@ export default function Entrenador({ navigation }) {
 
   // Filter clients based on search query
   useEffect(() => {
-    console.log("hola");
-    
     if (searchQuery.trim() === "") {
       setFilteredClients(clients);
     } else {
       const lowercasedQuery = searchQuery.toLowerCase();
       const filtered = clients.filter((client) => {
-        const clientName = client.nombre ? client.nombre.toLowerCase() : '';
-        const clientSurname = client.apellidos ? client.apellidos.toLowerCase() : '';
-        
+        const clientName = client.nombre ? client.nombre.toLowerCase() : "";
+        const clientSurname = client.apellidos
+          ? client.apellidos.toLowerCase()
+          : "";
+
         return (
-          clientName.includes(lowercasedQuery) || clientSurname.includes(lowercasedQuery)
+          clientName.includes(lowercasedQuery) ||
+          clientSurname.includes(lowercasedQuery)
         );
       });
-  
+
       setFilteredClients(filtered);
     }
   }, [searchQuery, clients]);
-  
 
   // Mark notification as read
   const markAsRead = (id) => {
