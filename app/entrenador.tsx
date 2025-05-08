@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Entrenador({ navigation }) {
   const [activeTab, setActiveTab] = useState("home");
@@ -25,6 +26,7 @@ export default function Entrenador({ navigation }) {
   const [clientReservations, setClientReservations] = useState([]);
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [userType, setUserType] = useState("client"); // 'client', 'nutricionista', or 'entrenador'
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Sample data for notifications (in a real app, these would also come from an API)
   const [notifications, setNotifications] = useState([
@@ -64,7 +66,6 @@ export default function Entrenador({ navigation }) {
   const fetchClients = async () => {
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await fetch("http://localhost:8080/api/users");
 
@@ -89,7 +90,7 @@ export default function Entrenador({ navigation }) {
       setIsLoading(false);
     }
   };
-
+  
   // Initial load
   useEffect(() => {
     fetchClients();
@@ -101,18 +102,25 @@ export default function Entrenador({ navigation }) {
 
   // Filter clients based on search query
   useEffect(() => {
+    console.log("hola");
+    
     if (searchQuery.trim() === "") {
       setFilteredClients(clients);
     } else {
       const lowercasedQuery = searchQuery.toLowerCase();
-      const filtered = clients.filter(
-        (client) =>
-          client.nombre.toLowerCase().includes(lowercasedQuery) ||
-          client.apellidos.toLowerCase().includes(lowercasedQuery)
-      );
+      const filtered = clients.filter((client) => {
+        const clientName = client.nombre ? client.nombre.toLowerCase() : '';
+        const clientSurname = client.apellidos ? client.apellidos.toLowerCase() : '';
+        
+        return (
+          clientName.includes(lowercasedQuery) || clientSurname.includes(lowercasedQuery)
+        );
+      });
+  
       setFilteredClients(filtered);
     }
   }, [searchQuery, clients]);
+  
 
   // Mark notification as read
   const markAsRead = (id) => {
@@ -168,25 +176,64 @@ export default function Entrenador({ navigation }) {
     setClientReservations([]);
   };
 
-  // Handle sending report
-  const sendReport = () => {
-    // In a real app, this would send data to an API
-    Alert.alert(
-      "Informe Enviado",
-      `Se ha enviado el informe de entrenamiento a ${selectedClient.nombre} ${selectedClient.apellidos}`,
-      [{ text: "OK" }]
-    );
+  const sendReport = async () => {
+    try {
+      // Get the current professional data
+      const professionalData = await AsyncStorage.getItem("userData");
+      const currentUser = professionalData
+        ? JSON.parse(professionalData)
+        : null;
+      console.log(currentUser);
 
-    // Reset form
-    setReportForm({
-      weight: "",
-      exerciseNotes: "",
-      heartRate: "",
-      repetitions: "",
-      sets: "",
-    });
+      if (!selectedClient || !currentUser?.user) {
+        console.log("Missing data:", { selectedClient, currentUser });
+        Alert.alert("Error", "Faltan datos del cliente o del entrenador.");
+        return;
+      }
+
+      // Changed payload structure to match what your backend expects
+      const informePayload = {
+        usuarioId: selectedClient.id, // Changed from usuario to usuarioId
+        enviadoPorId: currentUser.user?.id, // Changed from enviadoPor to enviadoPorId
+        mensaje: reportForm.exerciseNotes,
+        fecha: new Date().toISOString().split("T")[0],
+        peso: parseFloat(reportForm.weight),
+        masaMuscular: 0,
+      };
+
+      console.log("Payload enviado:", informePayload);
+
+      const response = await fetch("http://localhost:8080/api/informes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(informePayload),
+      });
+      console.log("Payload enviado:", informePayload);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error al enviar el informe:", errorData);
+        throw new Error(
+          `Error al enviar el informe: ${response.status} - ${JSON.stringify(
+            errorData
+          )}`
+        );
+      }
+
+      window.alert("Informe enviado correctamente.");
+      setReportForm({
+        weight: "",
+        repetitions: "",
+        sets: "",
+        heartRate: "",
+        exerciseNotes: "",
+      });
+    } catch (error) {
+      window.alert("Algo a ido mal revise informacion enviada.");
+    }
   };
-
   // Handle report form changes
   const handleReportChange = (field, value) => {
     setReportForm((prev) => ({
@@ -410,7 +457,7 @@ export default function Entrenador({ navigation }) {
           </Text>
         )}
       </View>
-
+      {/* informe section */}
       <View style={styles.clientDetailsCard}>
         <Text style={styles.detailSectionTitle}>
           Enviar Informe de Entrenamiento
@@ -472,7 +519,11 @@ export default function Entrenador({ navigation }) {
           />
         </View>
 
-        <TouchableOpacity style={styles.sendReportButton} onPress={sendReport}>
+        <TouchableOpacity
+          style={styles.sendReportButton}
+          onPress={sendReport}
+          activeOpacity={0.7}
+        >
           <Text style={styles.sendReportButtonText}>Enviar Informe</Text>
         </TouchableOpacity>
       </View>

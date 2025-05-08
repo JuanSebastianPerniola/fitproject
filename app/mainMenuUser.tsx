@@ -126,40 +126,47 @@ const MainMenuUser = () => {
         </Text>
       </View>
 
-      <View style={styles.menuGrid}>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/notificaciones")}
-        >
-          <Ionicons name="notifications-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Notificaciones</Text>
-        </TouchableOpacity>
+      <div style={styles.boxMiki}>
+        <View style={styles.menuGrid}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/notificaciones")}
+          >
+            <Ionicons name="notifications-outline" size={32} color="white" />
+            <Text style={styles.menuText}>Notificaciones</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/clasesDirigidas")}
-        >
-          <Ionicons name="calendar-outline" size={32} color="white" />
-          <Text style={styles.menuText}>Cita</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/clasesDirigidas")}
+          >
+            <Ionicons name="calendar-outline" size={32} color="white" />
+            <Text style={styles.menuText}>Cita</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/elegirEntrenador")}
+          >
+            <Ionicons name="person-add-outline" size={32} color="white" />
+            <Text style={styles.menuText}>Elegir Entrenador</Text>
+          </TouchableOpacity>
 
-      </View>
-
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => router.push("/elegirEntrenador")}
-      >
-        <Ionicons name="person-add-outline" size={32} color="white" />
-        <Text style={styles.menuText}>Elegir Entrenador</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => router.push("/elegirNutricionista")}
-      >
-        <Ionicons name="nutrition-outline" size={32} color="white" />
-        <Text style={styles.menuText}>Elegir Nutricionista</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/elegirNutricionista")}
+          >
+            <Ionicons name="nutrition-outline" size={32} color="white" />
+            <Text style={styles.menuText}>Elegir Nutricionista</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/informes")}
+          >
+            <Ionicons name="clipboard-outline" size={32} color="white" />
+            <Text style={styles.menuText}>Informe</Text>
+          </TouchableOpacity>
+        </View>
+      </div>
     </ScrollView>
   );
 };
@@ -169,66 +176,73 @@ export default MainMenuUser;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: "#f4f4f4",
     padding: 20,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     marginBottom: 20,
   },
   logoutButton: {
-    backgroundColor: '#ff6347',
+    backgroundColor: "#ff6347",
     padding: 10,
     borderRadius: 50,
   },
   profileContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
   },
   profileImageContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 10,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   profileImagePlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#e0e0e0',
-    width: '100%',
-    height: '100%',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#e0e0e0",
+    width: "100%",
+    height: "100%",
   },
   welcomeText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginBottom: 30,
   },
+  boxMiki: {
+    marginBottom: 30,
+    marginTop: 150,
+    margin: 0,
+    height : "100%",
+    width: "100%",
+  },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e90ff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1e90ff",
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 10,
     marginBottom: 15,
-    width: '48%',
-    justifyContent: 'space-between',
+    width: "48%",
+    justifyContent: "space-between",
   },
   menuText: {
     fontSize: 16,
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
   },
 });
